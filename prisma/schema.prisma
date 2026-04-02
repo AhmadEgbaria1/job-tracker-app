@@ -1,0 +1,24 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+// זה המודל שמייצג משרה בלוח המעקב שלך
+model Job {
+  id          String   @id @default(cuid())
+  company     String
+  role        String
+  status      String   @default("Applied")
+  appliedDate DateTime @default(now())
+  notes       String?
+  userId      String   // שדה חדש שמקשר למשתמש מגוגל
+  createdAt   DateTime @default(now())
+}
