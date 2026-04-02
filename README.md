@@ -42,4 +42,5 @@ Run the development server:
 
 Bash
 npm run dev
-Developed by Ahmad Egbaria computer sicence grauate at haifa unuvursity
+
+Developed by Ahmad Egbaria computer sicence grauate at haifa univursity
