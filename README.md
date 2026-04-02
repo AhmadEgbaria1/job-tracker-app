@@ -27,12 +27,19 @@ A professional, secure, and interactive job application tracking system designed
    ```bash
    git clone [https://github.com/AhmadEgbaria1/job-tracker-app.git](https://github.com/AhmadEgbaria1/job-tracker-app.git)
    cd job-tracker-app
-2.Install dependencies:  
+Install dependencies:
+
+Bash
 npm install
-3.Configure Environment Variables:
+Configure Environment Variables:
 Create a .env file in the root directory and add your Google Client ID, Secret, and Database URL.
-4.Initialize Database:
+
+Initialize Database:
+
+Bash
 npx prisma migrate dev --name init
-5.Run the development server:
+Run the development server:
+
+Bash
 npm run dev
 Developed by Ahmad Egbaria computer sicence grauate at haifa unuvursity
