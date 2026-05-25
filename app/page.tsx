@@ -1,11 +1,12 @@
 import db from "@/lib/db";
 import { auth, signIn, signOut } from "../auth";
 import { addJob, updateJobStatus, prevJobStatus, deleteJob } from "./actions";
+import SyncGmailButton from "./SyncGmailButton";
 
 export default async function Home() {
   const session = await auth();
   const jobs = session?.user?.id 
-    ? await db.job.findMany({ where: { userId: session.user.id } }) 
+    ? await db.job.findMany({ where: { userId: session.user.id }, orderBy: { id: 'desc' } }) // הוספתי סידור מהחדש לישן שיהיה נוח
     : [];
   const statuses = ['Applied', 'Interview', 'Offer', 'Rejected'];
 
@@ -34,11 +35,20 @@ export default async function Home() {
             )}
           </div>
 
-          <form action={addJob} className="flex gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-            <input name="company" placeholder="Company" className="p-2 border rounded-lg text-sm w-32 md:w-40" required />
-            <input name="role" placeholder="Role" className="p-2 border rounded-lg text-sm w-32 md:w-40" required />
-            <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition">+ Add</button>
-          </form>
+          {/* כאן עטפנו את שני הכפתורים בדיב משותף כדי שיישבו יפה אחד ליד השני */}
+          <div className="flex flex-col md:flex-row gap-3 items-center">
+            
+            {/* כפתור הסנכרון החדש (יוצג רק אם המשתמש מחובר) */}
+            {session && (
+              <SyncGmailButton />
+            )}
+
+            <form action={addJob} className="flex gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+              <input name="company" placeholder="Company" className="p-2 border rounded-lg text-sm w-32 md:w-40" required />
+              <input name="role" placeholder="Role" className="p-2 border rounded-lg text-sm w-32 md:w-40" required />
+              <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition">+ Add</button>
+            </form>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

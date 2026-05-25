@@ -21,4 +21,5 @@ model Job {
   notes       String?
   userId      String   // שדה חדש שמקשר למשתמש מגוגל
   createdAt   DateTime @default(now())
+  gmailMsgId  String?  @unique
 }
