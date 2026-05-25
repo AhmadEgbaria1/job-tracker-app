@@ -5,9 +5,12 @@ import SyncGmailButton from "./SyncGmailButton";
 
 export default async function Home() {
   const session = await auth();
+  
+  // המעקף הזמני: מביא את כל המשרות ממסד הנתונים בלי לסנן לפי ה-ID של המשתמש
   const jobs = session?.user?.id 
-    ? await db.job.findMany({ where: { userId: session.user.id }, orderBy: { id: 'desc' } }) // הוספתי סידור מהחדש לישן שיהיה נוח
-    : [];
+  ? await db.job.findMany({ where: { userId: session.user.id }, orderBy: { id: 'desc' } }) 
+  : [];
+
   const statuses = ['Applied', 'Interview', 'Offer', 'Rejected'];
 
   return (
@@ -35,10 +38,7 @@ export default async function Home() {
             )}
           </div>
 
-          {/* כאן עטפנו את שני הכפתורים בדיב משותף כדי שיישבו יפה אחד ליד השני */}
           <div className="flex flex-col md:flex-row gap-3 items-center">
-            
-            {/* כפתור הסנכרון החדש (יוצג רק אם המשתמש מחובר) */}
             {session && (
               <SyncGmailButton />
             )}
@@ -63,7 +63,6 @@ export default async function Home() {
                 {jobs.filter(j => j.status === status).map((job) => (
                   <div key={job.id} className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 group relative hover:border-blue-300 transition-all">
                     
-                    {/* כפתור מחיקה - מופיע רק כשמעבירים עכבר (Hover) */}
                     <form action={async () => { "use server"; await deleteJob(job.id); }} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button className="text-slate-300 hover:text-red-500 font-bold text-xs p-1">✕</button>
                     </form>
@@ -71,7 +70,6 @@ export default async function Home() {
                     <p className="font-bold text-slate-800 pr-4">{job.company}</p>
                     <p className="text-sm text-slate-500 mb-4">{job.role}</p>
 
-                    {/* כפתורי ניווט (קדימה ואחורה) */}
                     <div className="flex gap-1">
                       {job.status !== 'Applied' && (
                         <form action={async () => { "use server"; await prevJobStatus(job.id, job.status); }} className="flex-1">

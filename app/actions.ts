@@ -59,6 +59,123 @@ export async function deleteJob(jobId: string) {
   revalidatePath('/');
 }
 
+// Helper function to extract job title from subject and body
+// Helper function to extract job title from subject and body
+function parseJobTitle(subject: string, body: string): string {
+  // --- NEW: Smart filters for LinkedIn and automated job boards ---
+  const jobBoardMatches = [
+    subject.match(/application to\s+(.*?)\s+at\s+/i), // "Your application to [Role] at [Company]"
+    subject.match(/application for\s+(.*?)(?:$| at )/i), // "...application for [Role]"
+  ];
+  
+  for (const match of jobBoardMatches) {
+    if (match && match[1]) {
+      return match[1].trim().substring(0, 60);
+    }
+  }
+  // --------------------------------------------------------------
+
+  // Look for common job title patterns in subject
+  const jobTitlePatterns = [
+    /for\s+(?:the\s+)?["']?([^"']+?)["']?\s(?:role|position)/i,
+    /(?:position|role|job):\s*([^|\n]+?)(?:\||$)/i,
+    /(?:data|software|product|ux|design)\s+(?:engineer|developer|analyst|manager|designer)[^|\n]*/i,
+    /^(?!Re:|Fwd:)([^|\n]+?)(?:\s*[-–|]\s*|\s+@\s+)/,
+  ];
+
+  for (const pattern of jobTitlePatterns) {
+    const match = subject.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim().substring(0, 60);
+    }
+  }
+
+  // Fallback to looking in body
+  const bodyLower = body.toLowerCase();
+  const commonTitles = [
+    'senior software engineer', 'junior software engineer', 'data analyst',
+    'product manager', 'ux designer', 'software developer',
+    'backend engineer', 'frontend engineer', 'full stack engineer',
+  ];
+
+  for (const title of commonTitles) {
+    if (bodyLower.includes(title)) {
+      return title.charAt(0).toUpperCase() + title.slice(1);
+    }
+  }
+
+  // Last resort: clean up the subject line if everything else fails
+  return subject.replace(/^(Re:|Fwd:|Fwd|Ahmad, your application was sent to.+)/i, '').trim().substring(0, 60) || 'Unknown Role';
+}
+
+// Helper function to extract company name from email body and headers
+function parseCompanyName(from: string, subject: string, body: string): string {
+  // --- NEW: Smart filters for LinkedIn and automated job boards ---
+  // 1. "Your application to [Role] at [Company]"
+  const atMatchBoard = subject.match(/application to\s+(?:.*?)\s+at\s+(.+)/i);
+  if (atMatchBoard && atMatchBoard[1]) return atMatchBoard[1].trim();
+
+  // 2. "Ahmad, your application was sent to [Company]"
+  const sentToMatch = subject.match(/application was sent to\s+(.+)/i);
+  if (sentToMatch && sentToMatch[1]) return sentToMatch[1].trim();
+  // --------------------------------------------------------------
+
+  // 1. Look for company names in email signatures/body
+  const signaturePatterns = [
+    /(?:sent from|regards|best|thanks)[,:]?\s+([A-Z][A-Za-z\s&]+(?:Ltd|Inc|Corp|Company|Team)?)/i,
+    /([A-Z][A-Za-z\s&]+)\s+(?:Sourcing|Recruitment|HR|Team)/i,
+    /([A-Z][A-Za-z\s&]+)\s+(?:Team|Support)/i,
+  ];
+
+  for (const pattern of signaturePatterns) {
+    const match = body.match(pattern);
+    if (match && match[1]) {
+      const company = match[1].trim();
+      if (company.length > 2 && company.length < 60) return company;
+    }
+  }
+
+  // 2. Try to extract from email domain (ignoring generic job boards!)
+  const emailDomain = from.match(/[@]([a-zA-Z0-9.-]+)/)?.[1] || '';
+  if (emailDomain && !emailDomain.includes('linkedin') && !emailDomain.includes('myworkday') && !emailDomain.includes('amazon')) {
+    const domainPatterns = [/^([a-zA-Z]+)international/, /^([a-zA-Z]+)digital/, /^([a-zA-Z]+)ai/];
+    for (const pattern of domainPatterns) {
+      const match = emailDomain.match(pattern);
+      if (match) return match[1].charAt(0).toUpperCase() + match[1].slice(1);
+    }
+
+    const parts = emailDomain.split('.')[0];
+    if (parts.length > 2) return parts.charAt(0).toUpperCase() + parts.slice(1);
+  }
+
+  // 3. Look in subject for company clues (e.g., "@ CompanyName")
+  const atMatch = subject.match(/@\s*([A-Z][A-Za-z\s&]+?)(?:\s|$)/);
+  if (atMatch && atMatch[1]) return atMatch[1].trim();
+
+  return "Unknown Company";
+}
+// Helper function to extract plain text from email body
+function extractEmailBody(payload: any): string {
+  try {
+    // Try to get the body text
+    if (payload?.parts) {
+      for (const part of payload.parts) {
+        if (part.mimeType === 'text/plain' && part.body?.data) {
+          return Buffer.from(part.body.data, 'base64').toString('utf-8');
+        }
+      }
+    }
+    
+    if (payload?.body?.data) {
+      return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+    }
+  } catch (e) {
+    console.warn("Could not extract email body:", e);
+  }
+  
+  return '';
+}
+
 // פונקציית סנכרון המיילים המלאה
 export async function syncGmailJobs() {
   try {
@@ -115,28 +232,29 @@ export async function syncGmailJobs() {
         });
 
         const headers = fullMessage.data.payload?.headers;
-        const subject = headers?.find(h => h.name === 'Subject')?.value || 'ללא נושא';
+        const subject = headers?.find(h => h.name === 'Subject')?.value || 'No Subject';
         const from = headers?.find(h => h.name === 'From')?.value || '';
-
-        let company = "חברה לא ידועה";
         
-        // חילוץ שם החברה מתוך הכתובת של השולח (אחרי ה-@)
-        const domainMatch = from.match(/@([\w.-]+)\./);
-        if (domainMatch) {
-          company = domainMatch[1].charAt(0).toUpperCase() + domainMatch[1].slice(1);
-        }
+        // Extract email body for better parsing
+        const body = extractEmailBody(fullMessage.data.payload);
+
+        // Parse company name using improved logic
+        const company = parseCompanyName(from, subject, body);
+        
+        // Parse job title using improved logic
+        const role = parseJobTitle(subject, body);
 
         // שמירה למסד הנתונים
         await db.job.create({
           data: {
             company: company,
-            role: subject.substring(0, 40) + "...",
+            role: role,
             userId: session.user.id,
             gmailMsgId: message.id,
           }
         });
         newJobsCount++;
-        console.log(`✅ Added job: ${company} - ${subject.substring(0, 30)}...`);
+        console.log(`✅ Added job: ${company} - ${role}`);
       }
 
       console.log(`✅ Sync complete! Added ${newJobsCount} new jobs`);
