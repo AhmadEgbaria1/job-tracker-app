@@ -1,26 +1,14 @@
 # 🚀 Job Tracker Pro - Full Stack Application
 
-A professional, secure, and interactive job application tracking system designed to streamline the career hunt. This project demonstrates modern web development practices including server-side logic, relational database management, and secure third-party authentication.
+Job Tracker is a modern full-stack job application dashboard built with Next.js, TypeScript, Prisma, and Google authentication. It helps job seekers stay organized by tracking applications through an interactive Kanban board: Applied → Interview → Offer → Rejected.
 
-## ✨ Key Features
-* **Google OAuth 2.0 Integration:** Secure user authentication and personalized sessions via Auth.js.
-* **Interactive Kanban Board:** Manage your job pipeline with a dynamic board (Applied ➡️ Interview ➡️ Offer ➡️ Rejected).
-* **Smart Navigation:** Effortlessly move job cards forward, backward, or delete them entirely.
-* **Data Persistence:** Relational data storage using Prisma ORM to ensure your applications are never lost.
-* **User Isolation:** Multi-user support where each user manages their own private dashboard.
-* **Responsive UI:** Built with Tailwind CSS for a seamless experience across desktop and mobile devices.
+The app is designed to simplify the job search process by combining:
 
-## 🛠️ Tech Stack
-* **Framework:** [Next.js 14+](https://nextjs.org/) (App Router & Server Actions)
-* **Database:** [SQLite](https://www.sqlite.org/) with [Prisma ORM](https://www.prisma.io/)
-* **Authentication:** [Auth.js (NextAuth)](https://authjs.dev/)
-* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-* **Language:** TypeScript
-
-## 🤖 Future Roadmap (AI Integration)
-* **AI Email Agent:** Currently integrating **Google Gemini AI** to automatically parse Gmail notifications and update job statuses in real-time.
-* **Analytics:** Visualizing application success rates and interview statistics.
-
+secure sign-in with Google
+a clean and responsive interface
+persistent job tracking with a database
+Gmail integration to help import and organize relevant job-related emails
+This project reflects a practical approach to building real-world software: managing user data, handling authentication, working with APIs, and creating a user-friendly experience for career planning. It is a strong example of how modern web technologies can be used to solve a daily problem in a simple and effective way.
 ## ⚙️ Installation & Setup
 
 1. **Clone the repository:**
